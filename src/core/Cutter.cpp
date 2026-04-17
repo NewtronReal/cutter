@@ -4841,6 +4841,51 @@ QList<DisassemblyLine> CutterCore::disassembleLines(RVA offset, int lines)
     return r;
 }
 
+
+QList<DisassemblyLine> CutterCore::rzILLines(RVA offset, int lines)
+{
+    CORE_LOCK();
+    auto vec = fromOwned(
+            rz_pvector_new(reinterpret_cast<RzPVectorFree>(rz_analysis_disasm_text_free)));
+    if (!vec) {
+        return {};
+    }
+
+    RzIterator *ops = rz_core_analysis_op_chunk_iter(core, offset, lines, 0, mask);
+    rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty);
+
+    RzCoreDisasmOptions options = {};
+    options.cbytes = 1;
+    options.vec = vec.get();
+    {
+        auto restoreSeek = seekTemp(offset);
+        if (rz_cons_singleton()->is_html) {
+            rz_cons_singleton()->is_html = false;
+            rz_cons_singleton()->was_html = true;
+        }
+        rz_core_print_disasm(core, offset, core->block, core->blocksize, lines, NULL, &options);
+    }
+
+    QList<DisassemblyLine> r;
+    for (const auto &t : CutterPVector<RzAnalysisDisasmText>(vec.get())) {
+        QString text = t->text;
+        QStringList tokens = text.split('\n');
+        // text might contain multiple lines
+        // so we split them and keep only one
+        // arrow/jump to addr.
+        for (const auto &tok : tokens) {
+            DisassemblyLine line;
+            line.offset = t->offset;
+            line.text = ansiEscapeToHtml(tok);
+            line.arrow = t->arrow;
+            r << line;
+            // only the first one.
+            t->arrow = RVA_INVALID;
+        }
+    }
+    return r;
+}
+
 /**
  * @brief return hexdump of <size> from an <offset> by a given formats
  * @param address - the address from which to print the hexdump

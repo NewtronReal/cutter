@@ -163,6 +163,7 @@ private slots:
     void addExtraHexdump();
     void addExtraDisassembly();
     void addExtraDecompiler();
+    void addExtraRzIL();
 
     void on_actionRefresh_Panels_triggered();
 

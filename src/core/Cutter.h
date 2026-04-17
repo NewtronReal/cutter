@@ -433,6 +433,7 @@ public:
     QString disassemble(const QByteArray &data);
     QString disassembleSingleInstruction(RVA addr);
     QList<DisassemblyLine> disassembleLines(RVA offset, int lines);
+    QList<DisassemblyLine> rzILLines(RVA offset, int lines);
 
     static QByteArray hexStringToBytes(const QString &hex);
     static QString bytesToHexString(const QByteArray &bytes);

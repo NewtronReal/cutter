@@ -169,6 +169,7 @@ set(SOURCES
     widgets/SearchableDockWidget.cpp
     common/CutterSearchable.cpp
     widgets/SearchableTextEdit.cpp
+    widgets/RzILWidget.cpp
 )
 set(HEADER_FILES
     core/Cutter.h
@@ -347,6 +348,7 @@ set(HEADER_FILES
     widgets/SearchableDockWidget.h
     common/CutterSearchable.h
     widgets/SearchableTextEdit.h
+    widgets/RzILWidget.h
 )
 set(UI_FILES
     dialogs/AboutDialog.ui

@@ -63,6 +63,7 @@
 #include "widgets/BreakpointWidget.h"
 #include "widgets/RegisterRefsWidget.h"
 #include "widgets/DisassemblyWidget.h"
+#include "widgets/RzILWidget.h"
 #include "widgets/StackWidget.h"
 #include "widgets/ThreadsWidget.h"
 #include "widgets/ProcessesWidget.h"
@@ -151,6 +152,8 @@ void MainWindow::initUI()
     connect(ui->actionExtraGraph, &QAction::triggered, this, &MainWindow::addExtraGraph);
     connect(ui->actionExtraDisassembly, &QAction::triggered, this,
             &MainWindow::addExtraDisassembly);
+    connect(ui->actionExtraRzIL, &QAction::triggered, this,
+            &MainWindow::addExtraRzIL);
     connect(ui->actionExtraHexdump, &QAction::triggered, this, &MainWindow::addExtraHexdump);
     connect(ui->actionCommitChanges, &QAction::triggered, this,
             []() { Core()->commitWriteCache(); });
@@ -160,6 +163,8 @@ void MainWindow::initUI()
     widgetTypeToConstructorMap.insert(GraphWidget::getWidgetType(), getNewInstance<GraphWidget>);
     widgetTypeToConstructorMap.insert(DisassemblyWidget::getWidgetType(),
                                       getNewInstance<DisassemblyWidget>);
+    widgetTypeToConstructorMap.insert(RzILWidget::getWidgetType(),
+                                      getNewInstance<RzILWidget>);
     widgetTypeToConstructorMap.insert(HexdumpWidget::getWidgetType(),
                                       getNewInstance<HexdumpWidget>);
     widgetTypeToConstructorMap.insert(DecompilerWidget::getWidgetType(),
@@ -485,6 +490,12 @@ void MainWindow::addExtraDisassembly()
     addExtraWidget(extraDock);
 }
 
+void MainWindow::addExtraRzIL()
+{
+    auto *extraDock = new RzILWidget(this);
+    addExtraWidget(extraDock);
+}
+
 void MainWindow::addExtraDecompiler()
 {
     auto *extraDock = new DecompilerWidget(this);
@@ -700,6 +711,11 @@ void MainWindow::finalizeOpen()
         auto decompilerWidget = qobject_cast<DecompilerWidget *>(dockWidget);
         if (decompilerWidget && dockWidget->isVisibleToUser()) {
             decompilerWidget->raiseMemoryWidget();
+            // continue looping in case there is a graph widget
+        }
+        auto rzilWidget = qobject_cast<RzILWidget *>(dockWidget);
+        if (rzilWidget && dockWidget->isVisibleToUser()) {
+            rzilWidget->raiseMemoryWidget();
             // continue looping in case there is a graph widget
         }
     }
@@ -962,7 +978,7 @@ bool MainWindow::isDebugWidget(QDockWidget *dock) const
 bool MainWindow::isExtraMemoryWidget(QDockWidget *dock) const
 {
     return qobject_cast<GraphWidget *>(dock) || qobject_cast<HexdumpWidget *>(dock)
-            || qobject_cast<DisassemblyWidget *>(dock) || qobject_cast<DecompilerWidget *>(dock);
+            || qobject_cast<DisassemblyWidget *>(dock) || qobject_cast<DecompilerWidget *>(dock) || qobject_cast<RzILWidget *>(dock);
 }
 
 MemoryWidgetType MainWindow::getMemoryWidgetTypeToRestore()
@@ -1140,6 +1156,9 @@ MemoryDockWidget *MainWindow::addNewMemoryWidget(MemoryWidgetType type, RVA addr
         break;
     case MemoryWidgetType::Disassembly:
         memoryWidget = new DisassemblyWidget(this);
+        break;
+    case MemoryWidgetType::RzIL:
+        memoryWidget = new RzILWidget(this);
         break;
     case MemoryWidgetType::Decompiler:
         memoryWidget = new DecompilerWidget(this);
@@ -1462,7 +1481,7 @@ void MainWindow::setViewLayout(const CutterLayout &layout)
     if (isDefault) {
         docksToCreate =
                 QStringList { DisassemblyWidget::getWidgetType(), GraphWidget::getWidgetType(),
-                              HexdumpWidget::getWidgetType(), DecompilerWidget::getWidgetType() };
+                              HexdumpWidget::getWidgetType(), DecompilerWidget::getWidgetType(), RzILWidget::getWidgetType()};
     } else {
         docksToCreate = layout.viewProperties.keys();
     }
