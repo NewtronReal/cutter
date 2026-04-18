@@ -4851,9 +4851,6 @@ QList<DisassemblyLine> CutterCore::rzILLines(RVA offset, int lines)
         return {};
     }
 
-    RzIterator *ops = rz_core_analysis_op_chunk_iter(core, offset, lines, 0, mask);
-    rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty);
-
     RzCoreDisasmOptions options = {};
     options.cbytes = 1;
     options.vec = vec.get();
