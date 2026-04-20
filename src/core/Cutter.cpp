@@ -4851,16 +4851,13 @@ QList<DisassemblyLine> CutterCore::rzILLines(RVA offset, int lines)
         return {};
     }
 
-    RzCoreDisasmOptions options = {};
-    options.cbytes = 1;
-    options.vec = vec.get();
     {
         auto restoreSeek = seekTemp(offset);
         if (rz_cons_singleton()->is_html) {
             rz_cons_singleton()->is_html = false;
             rz_cons_singleton()->was_html = true;
         }
-        rz_core_print_disasm(core, offset, core->block, core->blocksize, lines, NULL, &options);
+        rz_core_il_print_rzil(core,vec.get(),true,false,true);
     }
 
     QList<DisassemblyLine> r;
