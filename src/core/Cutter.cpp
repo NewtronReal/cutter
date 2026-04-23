@@ -4896,7 +4896,7 @@ QList<DisassemblyLine> CutterCore::rzILLines(RVA offset, int lines)
             rz_cons_singleton()->is_html = false;
             rz_cons_singleton()->was_html = true;
         }
-        rz_core_il_print_rzil(core,vec.get(),true,false,true);
+        rz_core_il_print_rzil(core, vec.get(), offset, lines, false, true, true);
     }
 
     QList<DisassemblyLine> r;

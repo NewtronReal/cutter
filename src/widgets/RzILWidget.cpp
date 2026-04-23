@@ -56,8 +56,10 @@ RzILWidget::RzILWidget(MainWindow *main)
     layout->setContentsMargins(0, 0, 0, 0);
     mDisasScrollArea->viewport()->setLayout(layout);
     splitter->addWidget(mDisasScrollArea);
-    connect(mDisasScrollArea->verticalScrollBar(), &QScrollBar::valueChanged, this,
-            [this](int) { refreshDisasm(mDisasScrollArea->verticalScrollBar()->address()); });
+    connect(mDisasScrollArea->verticalScrollBar(), &QScrollBar::valueChanged, this, [this](int) {
+        ;
+        refreshDisasm(mDisasScrollArea->verticalScrollBar()->address());
+    });
     // Use stylesheet instead of QWidget::setFrameShape(QFrame::NoShape) to avoid
     // issues with dark and light interface themes
     mDisasScrollArea->setStyleSheet("QAbstractScrollArea { border: 0px transparent black; }");
@@ -328,6 +330,7 @@ void RzILWidget::scrollInstructions(int count, bool clampToScrollBarRange)
     RVA offset;
     if (count > 0) {
         offset = Core()->nextOpAddr(topOffset, count);
+        // qInfo()<<QString::number(topOffset,16)<<" "<<QString::number(offset,16);
         if (offset < topOffset) {
             offset = RVA_MAX;
         }
@@ -341,7 +344,6 @@ void RzILWidget::scrollInstructions(int count, bool clampToScrollBarRange)
     if (clampToScrollBarRange) {
         offset = mDisasScrollArea->verticalScrollBar()->clampAddressToRange(offset);
     }
-
     refreshDisasm(offset);
     topOffsetHistory[topOffsetHistoryPos] = offset;
 }
