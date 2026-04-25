@@ -138,10 +138,7 @@ class RzILTextEdit : public QPlainTextEdit
     Q_OBJECT
 
 public:
-    explicit RzILTextEdit(QWidget *parent = nullptr)
-        : QPlainTextEdit(parent), lockScroll(false)
-    {
-    }
+    explicit RzILTextEdit(QWidget *parent = nullptr) : QPlainTextEdit(parent), lockScroll(false) {}
 
     void setLockScroll(bool lock) { this->lockScroll = lock; }
 

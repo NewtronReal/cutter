@@ -169,6 +169,9 @@ DisassemblyWidget::DisassemblyWidget(MainWindow *main)
     ADD_ACTION("Disassembly.switchToGraph", Qt::WidgetWithChildrenShortcut,
                [this] { mainWindow->showMemoryWidget(MemoryWidgetType::Graph); })
 
+    ADD_ACTION("Disassembly.switchToRzIL", Qt::WidgetWithChildrenShortcut,
+               [this] { mainWindow->showMemoryWidget(MemoryWidgetType::RzIL); })
+
     ADD_ACTION("General.seekPrev", Qt::WidgetWithChildrenShortcut, &DisassemblyWidget::seekPrev)
 
     ADD_ACTION("Disassembly.moveDown", Qt::WidgetWithChildrenShortcut,

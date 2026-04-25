@@ -152,8 +152,7 @@ void MainWindow::initUI()
     connect(ui->actionExtraGraph, &QAction::triggered, this, &MainWindow::addExtraGraph);
     connect(ui->actionExtraDisassembly, &QAction::triggered, this,
             &MainWindow::addExtraDisassembly);
-    connect(ui->actionExtraRzIL, &QAction::triggered, this,
-            &MainWindow::addExtraRzIL);
+    connect(ui->actionExtraRzIL, &QAction::triggered, this, &MainWindow::addExtraRzIL);
     connect(ui->actionExtraHexdump, &QAction::triggered, this, &MainWindow::addExtraHexdump);
     connect(ui->actionCommitChanges, &QAction::triggered, this,
             []() { Core()->commitWriteCache(); });
@@ -163,8 +162,7 @@ void MainWindow::initUI()
     widgetTypeToConstructorMap.insert(GraphWidget::getWidgetType(), getNewInstance<GraphWidget>);
     widgetTypeToConstructorMap.insert(DisassemblyWidget::getWidgetType(),
                                       getNewInstance<DisassemblyWidget>);
-    widgetTypeToConstructorMap.insert(RzILWidget::getWidgetType(),
-                                      getNewInstance<RzILWidget>);
+    widgetTypeToConstructorMap.insert(RzILWidget::getWidgetType(), getNewInstance<RzILWidget>);
     widgetTypeToConstructorMap.insert(HexdumpWidget::getWidgetType(),
                                       getNewInstance<HexdumpWidget>);
     widgetTypeToConstructorMap.insert(DecompilerWidget::getWidgetType(),
@@ -978,7 +976,8 @@ bool MainWindow::isDebugWidget(QDockWidget *dock) const
 bool MainWindow::isExtraMemoryWidget(QDockWidget *dock) const
 {
     return qobject_cast<GraphWidget *>(dock) || qobject_cast<HexdumpWidget *>(dock)
-            || qobject_cast<DisassemblyWidget *>(dock) || qobject_cast<DecompilerWidget *>(dock) || qobject_cast<RzILWidget *>(dock);
+            || qobject_cast<DisassemblyWidget *>(dock) || qobject_cast<DecompilerWidget *>(dock)
+            || qobject_cast<RzILWidget *>(dock);
 }
 
 MemoryWidgetType MainWindow::getMemoryWidgetTypeToRestore()
@@ -1107,6 +1106,7 @@ QMenu *MainWindow::createShowInMenu(QWidget *parent, RVA address, AddressTypeHin
     }
     createAddNewWidgetAction(tr("New hexdump"), MemoryWidgetType::Hexdump);
     createAddNewWidgetAction(tr("New Decompiler"), MemoryWidgetType::Decompiler);
+    createAddNewWidgetAction(tr("New RzIL"), MemoryWidgetType::RzIL);
     return menu;
 }
 
@@ -1481,7 +1481,8 @@ void MainWindow::setViewLayout(const CutterLayout &layout)
     if (isDefault) {
         docksToCreate =
                 QStringList { DisassemblyWidget::getWidgetType(), GraphWidget::getWidgetType(),
-                              HexdumpWidget::getWidgetType(), DecompilerWidget::getWidgetType(), RzILWidget::getWidgetType()};
+                              HexdumpWidget::getWidgetType(), DecompilerWidget::getWidgetType(),
+                              RzILWidget::getWidgetType() };
     } else {
         docksToCreate = layout.viewProperties.keys();
     }

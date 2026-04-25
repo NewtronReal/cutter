@@ -4880,7 +4880,6 @@ QList<DisassemblyLine> CutterCore::disassembleLines(RVA offset, int lines)
     return r;
 }
 
-
 QList<DisassemblyLine> CutterCore::rzILLines(RVA offset, int lines)
 {
     CORE_LOCK();

@@ -30,7 +30,7 @@
 namespace DH = DisassemblyHelper;
 
 RzILWidget::RzILWidget(MainWindow *main)
-    : MemoryDockWidget(MemoryWidgetType::Disassembly, main),
+    : MemoryDockWidget(MemoryWidgetType::RzIL, main),
       mCtxMenu(new DisassemblyContextMenu(this, main)),
       mDisasScrollArea(new RzILScrollArea(this)),
       mDisasTextEdit(new RzILTextEdit(this))
@@ -123,8 +123,7 @@ RzILWidget::RzILWidget(MainWindow *main)
     connect(mDisasTextEdit, &QWidget::customContextMenuRequested, this,
             &RzILWidget::showDisasContextMenu);
 
-    connect(mDisasScrollArea, &RzILScrollArea::scrollLines, this,
-            &RzILWidget::scrollInstructions);
+    connect(mDisasScrollArea, &RzILScrollArea::scrollLines, this, &RzILWidget::scrollInstructions);
     connect(mDisasScrollArea, &RzILScrollArea::disassemblyResized, this,
             &RzILWidget::updateMaxLines);
     connect(mDisasScrollArea, &RzILScrollArea::wheelEventTriggered, this,
@@ -154,8 +153,7 @@ RzILWidget::RzILWidget(MainWindow *main)
 
     mCtxMenu->addSeparator();
     mCtxMenu->addAction(&syncAction);
-    connect(seekable, &CutterSeekable::seekableSeekChanged, this,
-            &RzILWidget::on_seekChanged);
+    connect(seekable, &CutterSeekable::seekableSeekChanged, this, &RzILWidget::on_seekChanged);
 
     addActions(mCtxMenu->actions());
 
@@ -170,6 +168,8 @@ RzILWidget::RzILWidget(MainWindow *main)
     // Space to switch to graph
     ADD_ACTION("Disassembly.switchToGraph", Qt::WidgetWithChildrenShortcut,
                [this] { mainWindow->showMemoryWidget(MemoryWidgetType::Graph); })
+    ADD_ACTION("RzIL.switchToDisassm", Qt::WidgetWithChildrenShortcut,
+               [this] { mainWindow->showMemoryWidget(MemoryWidgetType::Disassembly); })
 
     ADD_ACTION("General.seekPrev", Qt::WidgetWithChildrenShortcut, &RzILWidget::seekPrev)
 

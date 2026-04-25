@@ -154,7 +154,11 @@ const QHash<QString, Shortcut> &getDefaultShortcuts()
           { { Qt::Key_Y },
             QT_TRANSLATE_NOOP("DecompilerContextMenu", "Edit variable <name of variable>"),
             "DecompilerContextMenu" } },
-
+        // RzIL
+        { "RzIL.switchToDisassm",
+          { { Qt::META | Qt::Key_Space },
+            QT_TRANSLATE_NOOP("RzILWidget", "Switch to Disassm"),
+            "RzILWidget" } },
         // Disassembly
         { "Disassembly.copy",
           { QKeySequence::keyBindings(QKeySequence::Copy),
@@ -214,6 +218,10 @@ const QHash<QString, Shortcut> &getDefaultShortcuts()
         { "Disassembly.switchToGraph",
           { { Qt::Key_Space },
             QT_TRANSLATE_NOOP("DisassemblyWidget", "Switch to Graph"),
+            "DisassemblyWidget" } },
+        { "Disassembly.switchToRzIL",
+          { { Qt::META | Qt::Key_Space },
+            QT_TRANSLATE_NOOP("DisassemblyWidget", "Switch to RzIL"),
             "DisassemblyWidget" } },
         { "Disassembly.moveDown",
           { QList<QKeySequence> { Qt::Key_J }
