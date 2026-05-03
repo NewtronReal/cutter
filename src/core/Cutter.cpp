@@ -6,6 +6,7 @@
 #include <QVector>
 #include <QStringList>
 #include <QStandardPaths>
+#include <QDebug>
 
 #include <cassert>
 #include <memory>
@@ -4889,14 +4890,34 @@ QList<DisassemblyLine> CutterCore::rzILLines(RVA offset, int lines)
         return {};
     }
 
+    RzCoreILPrintOptions options = {.cbytes=1,.pretty=0,.colorize=1,.unicode=1,.vec=vec.get()};
+
     {
         auto restoreSeek = seekTemp(offset);
         if (rz_cons_singleton()->is_html) {
             rz_cons_singleton()->is_html = false;
             rz_cons_singleton()->was_html = true;
         }
-        rz_core_il_print_rzil(core, vec.get(), offset, lines, false, true, true);
+        rz_core_il_print_rzil(core, offset, core->block,core->blocksize, lines, &options);
     }
+    RzCore *core2 = rz_core_new();
+    rz_io_open_at(core2->io, "malloc://0x100", RZ_PERM_RX, 0644, 0, NULL); // needed to get arrow info (is_valid_offset checks)
+    rz_core_arch_configure(core2, "x86", 64, NULL, NULL, NULL);
+
+    rz_config_set_b(core2->config, "asm.lines", false); // arrow info in struct, but not in textual disasm
+    ut8 buf[128];
+    rz_core_theme_load(core, "default");
+    int len2 = rz_hex_str2bin("554889e5897dfcebf8", buf);
+    auto vec2 = fromOwned(rz_pvector_new(reinterpret_cast<RzPVectorFree>(rz_analysis_disasm_text_free)));
+    RzCoreILPrintOptions options2 = {.cbytes=1,.pretty=0,.colorize=1,.unicode=1,.vec=vec2.get()};
+    // RzCoreDisasmOptions options2 = {.cbytes=1,.vec=vec2.get()};
+    // rz_core_print_disasm(core2,0,buf,len2,len2,NULL,&options2);
+    rz_core_il_print_rzil(core2, 0, buf,len2, len2, &options2);
+    for (const auto &t : CutterPVector<RzAnalysisDisasmText>(vec2.get())){
+        QString debug = t->text;
+        qInfo()<<debug.toUtf8();
+    }
+
 
     QList<DisassemblyLine> r;
     for (const auto &t : CutterPVector<RzAnalysisDisasmText>(vec.get())) {

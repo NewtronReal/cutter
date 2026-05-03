@@ -331,7 +331,6 @@ void DisassemblyWidget::scrollInstructions(int count, bool clampToScrollBarRange
     RVA offset;
     if (count > 0) {
         offset = Core()->nextOpAddr(topOffset, count);
-        qInfo() << QString::number(topOffset, 16) << " " << QString::number(offset, 16);
         if (offset < topOffset) {
             offset = RVA_MAX;
         }
