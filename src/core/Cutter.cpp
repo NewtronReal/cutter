@@ -243,14 +243,6 @@ CutterCore::~CutterCore()
     delete bbHighlighter;
     rz_cons_sleep_end(coreBed);
     rz_core_task_sync_end(&rzCore->tasks);
-    printf("rzCore      = %p\n", rzCore);
-    printf("diffCore    = %p\n", diffCore);
-
-    printf("rzCore->egg   = %p\n", rzCore->egg);
-    printf("diffCore->egg = %p\n", diffCore->egg);
-
-    printf("rzCore->egg->remit   = %p\n", rzCore->egg->remit);
-    printf("diffCore->egg->remit = %p\n", diffCore->egg->remit);
     rz_core_free(this->rzCore);
     this->rzCore = nullptr;
     // RzCore *c = diffCore;
