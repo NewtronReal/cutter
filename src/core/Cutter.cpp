@@ -245,7 +245,86 @@ CutterCore::~CutterCore()
     rz_core_task_sync_end(&rzCore->tasks);
     rz_core_free(this->rzCore);
     this->rzCore = nullptr;
-    rz_core_free(this->diffCore);
+    RzCore *c = diffCore;
+    //rz_core_free(this->diffCore);
+    {
+        RZ_FREE_CUSTOM(c->lib, rz_lib_free);
+        rz_core_plugin_fini(c);
+        rz_core_task_break_all(&c->tasks);
+        rz_core_task_join(&c->tasks, NULL, -1);
+        rz_core_wait(c);
+        //  avoid double free
+        RZ_FREE_CUSTOM(c->hash, rz_hash_free);
+        RZ_FREE_CUSTOM(c->ropchain, rz_list_free);
+        RZ_FREE_CUSTOM(c->ev, rz_event_free);
+        RZ_FREE(c->cmdlog);
+        RZ_FREE(c->lastsearch);
+        RZ_FREE(c->cons->pager);
+        RZ_FREE(c->cmdqueue);
+        RZ_FREE(c->lastcmd);
+        RZ_FREE(c->stkcmd);
+        RZ_FREE(c->block);
+
+        RZ_FREE_CUSTOM(c->num, rz_num_free);
+        RZ_FREE(c->table_query);
+        RZ_FREE_CUSTOM(c->io, rz_io_free);
+        RZ_FREE_CUSTOM(c->files, rz_list_free);
+        RZ_FREE_CUSTOM(c->watchers, rz_list_free);
+        RZ_FREE_CUSTOM(c->scriptstack, rz_list_free);
+        rz_core_task_scheduler_fini(&c->tasks);
+        RZ_FREE_CUSTOM(c->rcmd, rz_cmd_free);
+        RZ_FREE_CUSTOM(c->cmd_descriptors, rz_list_free);
+        RZ_FREE_CUSTOM(c->analysis, rz_analysis_free);
+        RZ_FREE_CUSTOM(c->rasm, rz_asm_free);
+        RZ_FREE_CUSTOM(c->print, rz_print_free);
+        RZ_FREE_CUSTOM(c->bin, rz_bin_free);
+        RZ_FREE_CUSTOM(c->lang, rz_lang_free);
+        RZ_FREE_CUSTOM(c->dbg, rz_debug_free);
+        RZ_FREE_CUSTOM(c->config, rz_config_free);
+        // /* after rz_config_free, the value of I.teefile is trashed */
+        // /* rconfig doesnt knows how to deinitialize vars, so we
+        // should probably need to add a rz_config_free_payload callback */
+        rz_cons_free();
+        rz_cons_singleton()->teefile = NULL; // HACK
+        RZ_FREE_CUSTOM(c->search, rz_search_free);
+        RZ_FREE_CUSTOM(c->flags, rz_flag_free);
+        // RZ_FREE_CUSTOM(c->egg, rz_egg_free);
+        RzEgg *egg = c->egg;
+        if (!egg) {
+            return;
+        }
+        printf(egg->remit->arch);
+        if (egg->remit && egg->remit->fini) {
+            printf("going to be freed");
+            egg->remit->fini(egg->remit);
+        }
+
+        rz_path_free(egg->sys_path);
+        rz_buf_free(egg->src);
+        rz_buf_free(egg->buf);
+        rz_buf_free(egg->bin);
+        rz_asm_free(egg->rasm);
+        rz_syscall_free(egg->syscall);
+        sdb_free(egg->db);
+        ht_sp_free(egg->plugins);
+        rz_list_free(egg->patches);
+        rz_egg_lang_free(egg);
+        free(egg);
+        RZ_FREE_CUSTOM(c->crypto, rz_crypto_free);
+        RZ_FREE_CUSTOM(c->yank_buf, rz_buf_free);
+        RZ_FREE_CUSTOM(c->graph, rz_agraph_free);
+        RZ_FREE(c->asmqjmps);
+        RZ_FREE_CUSTOM(c->sdb, sdb_free);
+        RZ_FREE_CUSTOM(c->parser, rz_parse_free);
+        RZ_FREE(c->times);
+        rz_core_seek_free(c);
+        RZ_FREE(c->rtr_host);
+        RZ_FREE(c->curtheme);
+        //RZ_FREE_CUSTOM(c->visual, rz_core_visual_free);
+        RZ_FREE_CUSTOM(c->warnings_after, rz_list_free);
+        RZ_FREE_CUSTOM(c->sys_path, rz_path_free);
+        RZ_FREE_CUSTOM(c->marks, rz_mark_free);
+    }
     this->diffCore = nullptr;
     rz_cons_free();
     assert(uniqueInstance == this);
@@ -5226,7 +5305,7 @@ RzAnalysisMatchResult *CutterCore::diffNewFile(const QString &filePath, int leve
                                                RzAnalysisMatchThreadInfoCb callback, void *user)
 {
     CORE_LOCK();
-    RzList *fcns_a = nullptr, *fcns_b = nullptr;
+    RzList *fcnsA = nullptr, *fcnsB = nullptr;
     RzAnalysisMatchResult *result = nullptr;
     RzAnalysisMatchOpt opts;
     RzConfigEntry *var;
@@ -5238,7 +5317,7 @@ RzAnalysisMatchResult *CutterCore::diffNewFile(const QString &filePath, int leve
         if (!diffCore) {
             return nullptr;
         }
-        rz_config_set_b(diffCore->config, "io.va", rz_config_get_b(rzCore->config, "io.va"));
+        rz_config_set_b(diffCore->config, "io.va", rz_config_get_b(core->config, "io.va"));
 
         rz_core_loadlibs(diffCore, RZ_CORE_LOADLIBS_ALL);
         diffCore->print->scr_prompt = false;
@@ -5259,7 +5338,7 @@ RzAnalysisMatchResult *CutterCore::diffNewFile(const QString &filePath, int leve
         goto fail;
     }
 
-    CutterRzVectorForeach (&rzCore->config->sorted_vars, var, RzConfigEntry) {
+    CutterRzVectorForeach (&core->config->sorted_vars, var, RzConfigEntry) {
         node = &var->node;
         if (!strcmp(node->name, "scr.color") || !strcmp(node->name, "scr.interactive")
             || !strcmp(node->name, "cfg.debug")) {
@@ -5280,38 +5359,38 @@ RzAnalysisMatchResult *CutterCore::diffNewFile(const QString &filePath, int leve
         goto fail;
     }
 
-    fcns_a = get_functions(rzCore->analysis, compareLogic);
-    if (rz_list_empty(fcns_a)) {
+    fcnsA = get_functions(core->analysis, compareLogic);
+    if (rz_list_empty(fcnsA)) {
         qWarning() << tr("no functions found in the current opened file");
         goto fail;
     }
 
-    fcns_b = get_functions(diffCore->analysis, compareLogic);
-    if (rz_list_empty(fcns_b)) {
+    fcnsB = get_functions(diffCore->analysis, compareLogic);
+    if (rz_list_empty(fcnsB)) {
         qWarning() << tr("no functions found in the just opene file %1").arg(filePath);
         goto fail;
     }
 
-    opts.analysis_a = rzCore->analysis;
+    opts.analysis_a = core->analysis;
     opts.analysis_b = diffCore->analysis;
     opts.callback = callback;
     opts.user = user;
 
            // calculate all the matches between the functions of the 2 different core files.
-    result = rz_analysis_match_functions(fcns_a, fcns_b, &opts);
+    result = rz_analysis_match_functions(fcnsA, fcnsB, &opts);
     if (!result) {
         qWarning() << tr("failed to perform the function matching operation or job was cancelled.");
         goto fail;
     }
 
-    rz_list_free(fcns_a);
-    rz_list_free(fcns_b);
+    rz_list_free(fcnsA);
+    rz_list_free(fcnsB);
     return result;
 
 fail:
 
-    rz_list_free(fcns_a);
-    rz_list_free(fcns_b);
+    rz_list_free(fcnsA);
+    rz_list_free(fcnsB);
     rz_core_file_close_all_but(diffCore);
     return nullptr;
 }
