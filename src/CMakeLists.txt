@@ -612,11 +612,11 @@ if (CUTTER_APPIMAGE_BUILD)
 endif()
 
 if (CUTTER_PACKAGE_JSDEC)
-	target_compile_definitions(Cutter PRIVATE CUTTER_BUNDLE_JSDEC)
+        target_compile_definitions(Cutter PRIVATE CUTTER_BUNDLE_JSDEC)
 endif()
 
 if(APPLE AND CUTTER_ENABLE_PACKAGING AND CUTTER_USE_BUNDLED_RIZIN)
-	target_compile_definitions(Cutter PRIVATE MACOS_RZ_BUNDLED)
+        target_compile_definitions(Cutter PRIVATE MACOS_RZ_BUNDLED)
 endif()
 
 if(CUTTER_ENABLE_PACKAGING)
