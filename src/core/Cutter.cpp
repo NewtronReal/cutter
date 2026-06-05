@@ -5226,96 +5226,93 @@ RzAnalysisMatchResult *CutterCore::diffNewFile(const QString &filePath, int leve
                                                RzAnalysisMatchThreadInfoCb callback, void *user)
 {
     CORE_LOCK();
-    // if(!diffCore){
-    //     diffCore = rz_core_new();
-    // }
-    //     RzList *fcns_a = nullptr, *fcns_b = nullptr;
-    //     RzAnalysisMatchResult *result = nullptr;
-    //     RzAnalysisMatchOpt opts;
-    //     RzConfigEntry *var;
-    //     RzConfigNode *node;
+    RzList *fcns_a = nullptr, *fcns_b = nullptr;
+    RzAnalysisMatchResult *result = nullptr;
+    RzAnalysisMatchOpt opts;
+    RzConfigEntry *var;
+    RzConfigNode *node;
 
-    //     if (!diffCore) {
-    //         // FIXME: allocating and deallocating a new core here, taints some pointer on rzCore
-    //         diffCore = rz_core_new();
-    //         if (!diffCore) {
-    //             return nullptr;
-    //         }
-    //         rz_config_set_b(diffCore->config, "io.va", rz_config_get_b(rzCore->config, "io.va"));
+    if (!diffCore) {
+        // FIXME: allocating and deallocating a new core here, taints some pointer on rzCore
+        diffCore = rz_core_new();
+        if (!diffCore) {
+            return nullptr;
+        }
+        rz_config_set_b(diffCore->config, "io.va", rz_config_get_b(rzCore->config, "io.va"));
 
-    //         rz_core_loadlibs(diffCore, RZ_CORE_LOADLIBS_ALL);
-    //         diffCore->print->scr_prompt = false;
-    //     }
+        rz_core_loadlibs(diffCore, RZ_CORE_LOADLIBS_ALL);
+        diffCore->print->scr_prompt = false;
+    }
 
-    //     if (!rz_core_file_open(diffCore, filePath.toUtf8().constData(), RZ_PERM_RX, 0)) {
-    //         qWarning() << tr("cannot open file %1").arg(filePath);
-    //         goto fail;
-    //     }
+    if (!rz_core_file_open(diffCore, filePath.toUtf8().constData(), RZ_PERM_RX, 0)) {
+        qWarning() << tr("cannot open file %1").arg(filePath);
+        goto fail;
+    }
 
-    //     if (!rz_core_bin_load(diffCore, nullptr, UT64_MAX)) {
-    //         qWarning() << tr("cannot load bin %1").arg(filePath);
-    //         goto fail;
-    //     }
+    if (!rz_core_bin_load(diffCore, nullptr, UT64_MAX)) {
+        qWarning() << tr("cannot load bin %1").arg(filePath);
+        goto fail;
+    }
 
-    //     if (!rz_core_bin_update_arch_bits(diffCore)) {
-    //         qWarning() << tr("cannot set architecture with bits");
-    //         goto fail;
-    //     }
+    if (!rz_core_bin_update_arch_bits(diffCore)) {
+        qWarning() << tr("cannot set architecture with bits");
+        goto fail;
+    }
 
-    //     CutterRzVectorForeach (&rzCore->config->sorted_vars, var, RzConfigEntry) {
-    //         node = &var->node;
-    //         if (!strcmp(node->name, "scr.color") || !strcmp(node->name, "scr.interactive")
-    //             || !strcmp(node->name, "cfg.debug")) {
-    //             rz_config_set(diffCore->config, node->name, "0");
-    //             continue;
-    //         }
-    //         rz_config_set(diffCore->config, node->name, node->value);
-    //     }
+    CutterRzVectorForeach (&rzCore->config->sorted_vars, var, RzConfigEntry) {
+        node = &var->node;
+        if (!strcmp(node->name, "scr.color") || !strcmp(node->name, "scr.interactive")
+            || !strcmp(node->name, "cfg.debug")) {
+            rz_config_set(diffCore->config, node->name, "0");
+            continue;
+        }
+        rz_config_set(diffCore->config, node->name, node->value);
+    }
 
-    //     if (!rz_core_analysis_all(diffCore)) {
-    //         qWarning() << tr("cannot perform basic analysis of the binary %1").arg(filePath);
-    //         goto fail;
-    //     }
+    if (!rz_core_analysis_all(diffCore)) {
+        qWarning() << tr("cannot perform basic analysis of the binary %1").arg(filePath);
+        goto fail;
+    }
 
-    //     if (level != AnalysisLevelSymbols
-    //         && !rz_core_analysis_everything(diffCore, level == AnalysisLevelExperimental,
-    //         nullptr)) { qWarning() << tr("cannot perform complete analysis of the binary
-    //         %1").arg(filePath); goto fail;
-    //     }
+    if (level != AnalysisLevelSymbols
+        && !rz_core_analysis_everything(diffCore, level == AnalysisLevelExperimental,
+        nullptr)) { qWarning() << tr("cannot perform complete analysis of the binary%1").arg(filePath);
+        goto fail;
+    }
 
-    //     fcns_a = get_functions(rzCore->analysis, compareLogic);
-    //     if (rz_list_empty(fcns_a)) {
-    //         qWarning() << tr("no functions found in the current opened file");
-    //         goto fail;
-    //     }
+    fcns_a = get_functions(rzCore->analysis, compareLogic);
+    if (rz_list_empty(fcns_a)) {
+        qWarning() << tr("no functions found in the current opened file");
+        goto fail;
+    }
 
-    //     fcns_b = get_functions(diffCore->analysis, compareLogic);
-    //     if (rz_list_empty(fcns_b)) {
-    //         qWarning() << tr("no functions found in the just opene file %1").arg(filePath);
-    //         goto fail;
-    //     }
+    fcns_b = get_functions(diffCore->analysis, compareLogic);
+    if (rz_list_empty(fcns_b)) {
+        qWarning() << tr("no functions found in the just opene file %1").arg(filePath);
+        goto fail;
+    }
 
-    //     opts.analysis_a = rzCore->analysis;
-    //     opts.analysis_b = diffCore->analysis;
-    //     opts.callback = callback;
-    //     opts.user = user;
+    opts.analysis_a = rzCore->analysis;
+    opts.analysis_b = diffCore->analysis;
+    opts.callback = callback;
+    opts.user = user;
 
-    //            // calculate all the matches between the functions of the 2 different core files.
-    //     result = rz_analysis_match_functions(fcns_a, fcns_b, &opts);
-    //     if (!result) {
-    //         qWarning() << tr("failed to perform the function matching operation or job was
-    //         cancelled."); goto fail;
-    //     }
+           // calculate all the matches between the functions of the 2 different core files.
+    result = rz_analysis_match_functions(fcns_a, fcns_b, &opts);
+    if (!result) {
+        qWarning() << tr("failed to perform the function matching operation or job was cancelled.");
+        goto fail;
+    }
 
-    //     rz_list_free(fcns_a);
-    //     rz_list_free(fcns_b);
-    //     return result;
+    rz_list_free(fcns_a);
+    rz_list_free(fcns_b);
+    return result;
 
-    // fail:
+fail:
 
-    //     rz_list_free(fcns_a);
-    //     rz_list_free(fcns_b);
-    //     rz_core_file_close_all_but(diffCore);
+    rz_list_free(fcns_a);
+    rz_list_free(fcns_b);
+    rz_core_file_close_all_but(diffCore);
     return nullptr;
 }
 

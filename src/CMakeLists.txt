@@ -549,6 +549,12 @@ if (CUTTER_QT EQUAL 6)
     target_link_libraries(Cutter PRIVATE Qt6::OpenGLWidgets)
 endif()
 
+if(CUTTER_ASAN)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -fsanitize=address,undefined -fno-omit-frame-pointer -fsanitize-address-use-after-scope")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always -fsanitize=address,undefined -fno-omit-frame-pointer -fsanitize-address-use-after-scope")
+    set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fdiagnostics-color=always -fsanitize=address,undefined -fno-omit-frame-pointer -fsanitize-address-use-after-scope")
+endif()
+
 target_link_libraries(Cutter PUBLIC ${RIZIN_TARGET})
 if(CUTTER_ENABLE_PYTHON)
     target_link_libraries(Cutter PRIVATE Python3::Python)
