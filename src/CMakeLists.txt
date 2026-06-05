@@ -7,6 +7,7 @@ set(SOURCES
     core/CutterJson.cpp
     core/RizinCpp.cpp
     core/Basefind.cpp
+    core/BinDiff.cpp
     dialogs/EditStringDialog.cpp
     dialogs/WriteCommandsDialogs.cpp
     widgets/DisassemblerGraphView.cpp
@@ -153,6 +154,9 @@ set(SOURCES
     tools/basefind/BaseFindDialog.cpp
     tools/basefind/BaseFindSearchDialog.cpp
     tools/basefind/BaseFindResultsDialog.cpp
+    tools/bindiff/DiffLoadDialog.cpp
+    tools/bindiff/DiffWaitDialog.cpp
+    tools/bindiff/DiffWindow.cpp
     widgets/AddressRangeScrollBar.cpp
     dialogs/preferences/ShortcutOptionsWidget.cpp
     shortcuts/ShortcutManager.cpp
@@ -179,6 +183,7 @@ set(HEADER_FILES
     core/CutterJson.h
     core/RizinCpp.h
     core/Basefind.h
+    core/BinDiff.h
     dialogs/EditStringDialog.h
     dialogs/WriteCommandsDialogs.h
     widgets/DisassemblerGraphView.h
@@ -333,6 +338,9 @@ set(HEADER_FILES
     tools/basefind/BaseFindDialog.h
     tools/basefind/BaseFindSearchDialog.h
     tools/basefind/BaseFindResultsDialog.h
+    tools/bindiff/DiffLoadDialog.h
+    tools/bindiff/DiffWaitDialog.h
+    tools/bindiff/DiffWindow.h
     widgets/AddressRangeScrollBar.h
     dialogs/preferences/ShortcutOptionsWidget.h
     shortcuts/ShortcutManager.h
@@ -425,6 +433,9 @@ set(UI_FILES
     tools/basefind/BaseFindDialog.ui
     tools/basefind/BaseFindSearchDialog.ui
     tools/basefind/BaseFindResultsDialog.ui
+    tools/bindiff/DiffLoadDialog.ui
+    tools/bindiff/DiffWaitDialog.ui
+    tools/bindiff/DiffWindow.ui
     dialogs/preferences/ShortcutOptionsWidget.ui
     dialogs/MarkDialog.ui
     dialogs/ProfileDirectivesDialog.ui

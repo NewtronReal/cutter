@@ -4,6 +4,7 @@
 #include "RizinCpp.h"
 #include "common/BasicInstructionHighlighter.h"
 #include "core/Basefind.h"
+#include "core/BinDiff.h"
 #include "core/CutterCommon.h"
 #include "core/CutterDescriptions.h"
 #include "core/CutterJson.h"
@@ -950,6 +951,21 @@ public:
      */
     void writeGraphvizGraphToFile(const QString &path, const QString &format, RzCoreGraphType type,
                                   RVA address);
+    /* Diffing/Matching */
+    enum {
+        AnalysisLevelSymbols = 0,
+        AnalysisLevelComplete,
+        AnalysisLevelExperimental,
+    };
+
+    enum {
+        CompareLogicDefault = 0, ///< Only symbols and functions (no imports)
+        CompareLogicComplete, ///< All functions (imports included)
+        CompareLogicSymbols, ///< Only symbols
+    };
+
+    RzAnalysisMatchResult *diffNewFile(const QString &filePath, int level, int compareLogic,
+                                       RzAnalysisMatchThreadInfoCb callback, void *user);
 
 signals:
     void refreshAll();
@@ -1031,6 +1047,7 @@ private:
      * NEVER use this directly! Always use the CORE_LOCK(); macro and access it like core->...
      */
     RzCore *rzCore = nullptr;
+    RzCore *diffCore = nullptr;
 #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
     QMutex coreMutex;
 #else

@@ -25,6 +25,7 @@
 #include "dialogs/LayoutManager.h"
 #include "dialogs/MapFileDialog.h"
 #include "dialogs/NewFileDialog.h"
+#include "dialogs/RizinTaskDialog.h"
 #include "dialogs/WelcomeDialog.h"
 #include "dialogs/preferences/PreferencesDialog.h"
 
@@ -115,6 +116,7 @@
 
 // Tools
 #include "tools/basefind/BaseFindDialog.h"
+#include "tools/bindiff/DiffWaitDialog.h"
 
 template<class T>
 T *getNewInstance(MainWindow *m)
@@ -367,6 +369,7 @@ void MainWindow::initToolBar()
     connect(ui->actionQuit, &QAction::triggered, this, &MainWindow::onActionQuitTriggered);
 
     connect(ui->actionBaseFind, &QAction::triggered, this, &MainWindow::onActionBaseFindTriggered);
+    connect(ui->actionDiff, &QAction::triggered, this, &MainWindow::onActionDiffTriggered);
     connect(ui->actionBackward, &QAction::triggered, this, &MainWindow::onActionBackwardTriggered);
     connect(ui->actionForward, &QAction::triggered, this, &MainWindow::onActionForwardTriggered);
     connect(ui->actionRefreshContents, &QAction::triggered, this,
@@ -1722,6 +1725,16 @@ void MainWindow::onActionBaseFindTriggered()
     dialog->show();
 }
 
+void MainWindow::onActionDiffTriggered()
+{
+    if (diffLoadDialog) {
+        delete diffLoadDialog;
+    }
+    diffLoadDialog = new DiffLoadDialog(this);
+    diffLoadDialog->show();
+    connect(diffLoadDialog, &DiffLoadDialog::startDiffing, this, &MainWindow::startDiffing);
+}
+
 void MainWindow::onActionAboutTriggered()
 {
     auto *a = new AboutDialog(this);
@@ -2059,4 +2072,22 @@ void MainWindow::setAvailableIOModeOptions()
     default:
         ui->actionReadOnly->setChecked(true);
     }
+}
+
+void MainWindow::startDiffing()
+{
+    if (!diffLoadDialog) {
+        return;
+    }
+
+    QString modified = diffLoadDialog->getFileToOpen();
+    if (modified.isEmpty()) {
+        messageBoxWarning(tr("Error"), tr("The compare file was not selected."));
+        return;
+    }
+
+    auto level = diffLoadDialog->getLevel();
+    auto compare = diffLoadDialog->getCompare();
+    auto diffWait = new DiffWaitDialog(this);
+    diffWait->show(filename, modified, level, compare);
 }

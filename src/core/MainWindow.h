@@ -9,6 +9,7 @@
 #include "common/CutterLayout.h"
 #include "common/IOModesController.h"
 #include "common/InitialOptions.h"
+#include "tools/bindiff/DiffLoadDialog.h"
 
 #include <QList>
 #include <QMainWindow>
@@ -169,6 +170,7 @@ public slots:
 
     void toggleOverview(bool visibility, GraphWidget *targetGraph);
 private slots:
+    void onActionDiffTriggered();
     void onActionBaseFindTriggered();
     void onActionAboutTriggered();
     void onActionIssueTriggered();
@@ -177,6 +179,7 @@ private slots:
     void addExtraHexdump();
     void addExtraDisassembly();
     void addExtraDecompiler();
+    void startDiffing();
 
     void onActionRefreshPanelsTriggered();
 
@@ -295,6 +298,7 @@ private:
     CallGraphWidget *callGraphDock = nullptr;
     CallGraphWidget *globalCallGraphDock = nullptr;
     CutterDockWidget *heapDock = nullptr;
+    DiffLoadDialog *diffLoadDialog = nullptr;
 
     QMenu *disassemblyContextMenuExtensions = nullptr;
     QMenu *addressableContextMenuExtensions = nullptr;
@@ -356,6 +360,10 @@ private:
     MemoryDockWidget *lastSyncMemoryWidget = nullptr;
     MemoryDockWidget *lastMemoryWidget = nullptr;
     int functionDockWidthToRestore = 0;
+
+    QSharedPointer<RizinTask> task;
+    RizinTaskDialog *taskDialog = nullptr;
+    DiffLoadDialog *binDiffDialog = nullptr;
 };
 
 #endif // MAINWINDOW_H
