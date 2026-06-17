@@ -47,7 +47,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="tabMatchFunc">
       <property name="sizePolicy">
@@ -228,6 +228,16 @@
        <item>
         <widget class="QTableView" name="tableViewInfo"/>
        </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabHexDiff">
+      <attribute name="title">
+       <string>HexDiff</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutInfo">
+       <property name="sizeConstraint">
+        <enum>QLayout::SizeConstraint::SetNoConstraint</enum>
+       </property>
       </layout>
      </widget>
     </widget>

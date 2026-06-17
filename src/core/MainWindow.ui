@@ -171,6 +171,13 @@
       <string>&amp;Debug...</string>
      </property>
     </widget>
+    <widget class="QMenu" name="menuDiffing">
+     <property name="title">
+      <string>Diffing</string>
+     </property>
+     <addaction name="actionExtraHexDiff"/>
+     <addaction name="actionExtraOpDiff"/>
+    </widget>
     <addaction name="actionExtraDecompiler"/>
     <addaction name="actionExtraDisassembly"/>
     <addaction name="actionExtraGraph"/>
@@ -180,6 +187,7 @@
     <addaction name="menuAddDebugWidgets"/>
     <addaction name="menuPlugins"/>
     <addaction name="separator"/>
+    <addaction name="menuDiffing"/>
    </widget>
    <widget class="QMenu" name="menuDebug">
     <property name="title">
@@ -882,6 +890,16 @@
   <action name="actionDiff">
    <property name="text">
     <string>Diff</string>
+   </property>
+  </action>
+  <action name="actionExtraHexDiff">
+   <property name="text">
+    <string>Add HexDiff</string>
+   </property>
+  </action>
+  <action name="actionExtraOpDiff">
+   <property name="text">
+    <string>Add OpDiff</string>
    </property>
   </action>
  </widget>

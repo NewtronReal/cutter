@@ -72,6 +72,7 @@
 #include "widgets/TypesWidget.h"
 #include "widgets/VTablesWidget.h"
 #include "widgets/VisualNavbar.h"
+#include "tools/bindiff/HexDiffWidget.h"
 
 // Qt Headers
 #include <QActionGroup>
@@ -149,6 +150,7 @@ void MainWindow::initUI()
     addressableContextMenuExtensions = new QMenu(tr("Plugins"), this);
 
     connect(ui->actionExtraDecompiler, &QAction::triggered, this, &MainWindow::addExtraDecompiler);
+    connect(ui->actionExtraHexDiff, &QAction::triggered, this, &MainWindow::addExtraHexDiff);
     connect(ui->actionExtraGraph, &QAction::triggered, this, &MainWindow::addExtraGraph);
     connect(ui->actionExtraDisassembly, &QAction::triggered, this,
             &MainWindow::addExtraDisassembly);
@@ -433,7 +435,7 @@ void MainWindow::initDocks()
                                                    memoryMapDock = new MemoryMapWidget(this),
                                                    breakpointDock = new BreakpointWidget(this),
                                                    registerRefsDock = new RegisterRefsWidget(this),
-                                                   heapDock = new HeapDockWidget(this) };
+                                                   heapDock = new HeapDockWidget(this), };
 
     const QList<CutterDockWidget *> infoDocks = {
         classesDock = new ClassesWidget(this),
@@ -523,6 +525,11 @@ void MainWindow::addExtraHexdump()
 void MainWindow::addExtraDisassembly()
 {
     auto *extraDock = new DisassemblyWidget(this);
+    addExtraWidget(extraDock);
+}
+
+void MainWindow::addExtraHexDiff(){
+    auto *extraDock = new HexDiffWidget(this);
     addExtraWidget(extraDock);
 }
 

@@ -92,8 +92,8 @@ static void setFunctionDescription(FunctionDescription *desc, const RzAnalysisFu
 QList<BinDiffMatchDescription> BinDiff::matches()
 {
     QList<BinDiffMatchDescription> pairs;
-    RzAnalysisMatchPair *pair = nullptr;
-    RzListIter *it = nullptr;
+    const RzAnalysisMatchPair *pair = nullptr;
+    const RzListIter *it = nullptr;
     const RzAnalysisFunction *fcn_a = nullptr;
     const RzAnalysisFunction *fcn_b = nullptr;
 

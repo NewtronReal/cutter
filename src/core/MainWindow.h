@@ -180,6 +180,7 @@ private slots:
     void addExtraDisassembly();
     void addExtraDecompiler();
     void startDiffing();
+    void addExtraHexDiff();
 
     void onActionRefreshPanelsTriggered();
 
