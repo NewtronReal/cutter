@@ -8,6 +8,7 @@
 #include "common/Json.h"
 #include "common/RizinTask.h"
 #include "common/TempConfig.h"
+#include "dialogs/IntervalDialog.h" // IWYU pragma: keep
 #include "dialogs/MarkDialog.h"
 #include "dialogs/RizinTaskDialog.h"
 
@@ -1170,10 +1171,36 @@ void CutterCore::setConfig(const char *k, int v)
     rz_config_set_i(core->config, k, static_cast<ut64>(v));
 }
 
+void CutterCore::setConfig(const char *k, ut64 v)
+{
+    CORE_LOCK();
+    rz_config_set_integer(core->config, k, v);
+}
+
 void CutterCore::setConfig(const char *k, bool v)
 {
     CORE_LOCK();
     rz_config_set_i(core->config, k, v ? 1 : 0);
+}
+
+void CutterCore::setConfig(const char *k, const RzInterval &itv)
+{
+    CORE_LOCK();
+    rz_config_set_interval(core->config, k, itv);
+}
+
+void CutterCore::setConfig(const char *k, const QStringList &list)
+{
+    CORE_LOCK();
+    RzSetS *set = rz_set_s_new(HT_STR_DUP);
+    if (!set) {
+        return;
+    }
+    for (const QString &str : list) {
+        rz_set_s_add(set, str.toUtf8().constData());
+    }
+    rz_config_set_set(core->config, k, set);
+    rz_set_s_free(set);
 }
 
 int CutterCore::getConfigi(const char *k)
@@ -1192,6 +1219,21 @@ bool CutterCore::getConfigb(const char *k)
 {
     CORE_LOCK();
     return rz_config_get_i(core->config, k) != 0;
+}
+
+RzInterval CutterCore::getConfigItv(const char *k)
+{
+    CORE_LOCK();
+    return rz_config_get_interval(core->config, k);
+}
+
+QSet<QString> CutterCore::getConfigSet(const char *k)
+{
+    CORE_LOCK();
+    RzSetS *set = rz_config_get_set(core->config, k);
+    QSet<QString> res = convertRzSetS(set);
+    rz_set_s_free(set);
+    return res;
 }
 
 QString CutterCore::getConfigDescription(const char *k)
@@ -1216,6 +1258,21 @@ void CutterCore::triggerGraphOptionsChanged()
     emit graphOptionsChanged();
 }
 
+void CutterCore::triggerDebugOptionsChanged()
+{
+    emit debugOptionsChanged();
+}
+
+void CutterCore::triggerAnalysisOptionsChanged()
+{
+    emit analysisOptionsChanged();
+}
+
+void CutterCore::triggerSymbolsOptionsChanged()
+{
+    emit symbolsOptionsChanged();
+}
+
 void CutterCore::message(const QString &msg, bool debug)
 {
     if (msg.isEmpty()) {
@@ -1235,33 +1292,35 @@ QString CutterCore::getConfig(const char *k)
     return { rz_config_get(core->config, k) };
 }
 
-QStringList CutterCore::getConfigOptions(const char *k)
+QSet<QString> CutterCore::getConfigOptions(const char *k)
 {
     CORE_LOCK();
     const RzConfigNode *node = rz_config_node_get(core->config, k);
     if (!(node && node->options)) {
         return {};
     }
-    QStringList list;
-    for (const auto &s : CutterRzList<char>(node->options)) {
-        list << s;
+    QSet<QString> res;
+    for (auto it = CutterRzIter<const char *>(rz_set_s_as_iter(node->options)); it; ++it) {
+        res << QString::fromUtf8(*it);
     }
-    return list;
+    return res;
 }
 
 void CutterCore::setConfig(const char *k, const QVariant &v)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
-    switch (v.typeId()) {
-    case QMetaType::Type::Bool:
+    const int typeId = v.typeId();
+
+    if (typeId == QMetaType::Type::Bool) {
         setConfig(k, v.toBool());
-        break;
-    case QMetaType::Type::Int:
+    } else if (typeId == QMetaType::Type::Int) {
         setConfig(k, v.toInt());
-        break;
-    default:
+    } else if (typeId == qMetaTypeId<RzInterval>()) {
+        setConfig(k, v.value<RzInterval>());
+    } else if (typeId == QMetaType::Type::QStringList) {
+        setConfig(k, v.toStringList());
+    } else {
         setConfig(k, v.toString());
-        break;
     }
 #else
     switch (v.type()) {
@@ -1271,8 +1330,16 @@ void CutterCore::setConfig(const char *k, const QVariant &v)
     case QVariant::Type::Int:
         setConfig(k, v.toInt());
         break;
+    case QVariant::Type::StringList: {
+        setConfig(QString::fromUtf8(k), v.toStringList());
+        break;
+    }
     default:
-        setConfig(k, v.toString());
+        if (v.userType() == qMetaTypeId<RzInterval>()) {
+            setConfig(k, v.value<RzInterval>());
+        } else {
+            setConfig(k, v.toString());
+        }
         break;
     }
 #endif
@@ -3481,7 +3548,7 @@ QList<RelocDescription> CutterCore::getAllRelocs()
     return ret;
 }
 
-QList<StringDescription> CutterCore::getAllStrings()
+QList<StringDescription> CutterCore::getAllStrings(bool raw)
 {
     CORE_LOCK();
     RzBinFile *bf = rz_bin_cur(core->bin);
@@ -3493,7 +3560,13 @@ QList<StringDescription> CutterCore::getAllStrings()
         return {};
     }
 
-    const RzPVector *strings = rz_core_bin_whole_strings(core, bf);
+    const RzPVector *strings = nullptr;
+    if (raw) {
+        strings = rz_core_bin_whole_strings(core, bf);
+    } else if (auto *bf = rz_bin_cur(core->bin)) {
+        strings = rz_bin_object_get_strings(bf->o);
+    }
+
     if (!strings) {
         return {};
     }
@@ -4049,6 +4122,108 @@ QList<BacktraceDescription> CutterCore::getAllBacktraces()
     return backtraces;
 }
 
+QList<EvaluableVarDescription> CutterCore::getAllEvaluableVars()
+{
+    auto rzConfigIteratorCb = [](const RzConfigEntry *entry, void *user) -> bool {
+        if (!entry) {
+            return true;
+        }
+
+        auto *evalVarsList = static_cast<QList<EvaluableVarDescription> *>(user);
+        EvaluableVarDescription var;
+
+        var.name = QString::fromUtf8(rz_config_entry_get_name(entry));
+        var.description = QString::fromUtf8(rz_config_entry_get_desc(entry));
+        QVariant value;
+
+        if (entry->is_variable) {
+            const RzConfigVar *v = &entry->var;
+            var.readOnly = rz_config_var_is_readonly(v);
+
+            const ut32 flags = rz_config_var_get_flags(v);
+            if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_BOOL)) {
+                var.type = EvaluableVarDescription::Bool;
+            } else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_STR)) {
+                var.type = EvaluableVarDescription::String;
+            } else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_INT)) {
+                var.type = EvaluableVarDescription::Int;
+            } else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_ITV)) {
+                var.type = EvaluableVarDescription::Interval;
+                const RzInterval itv = rz_config_var_get_interval(v);
+                value = QVariant::fromValue(itv);
+            } else if (RZ_CONFIG_VAR_IS_TYPE(flags, RZ_CONFIG_VAR_TYPE_SET)) {
+                var.type = EvaluableVarDescription::Set;
+                RzSetS *set = rz_config_var_get_set(v);
+                value = QVariant::fromValue(convertRzSetS(set));
+                rz_set_s_free(set);
+            }
+
+            if (value.isNull()) {
+                value = QString::fromUtf8(rz_config_entry_get_as_string(entry));
+            }
+            var.value = value;
+
+            const RzSetS *optionsSet = rz_config_var_get_options(v);
+            if (optionsSet) {
+                var.options = convertRzSetS(optionsSet);
+            }
+        } else {
+            const RzConfigNode *node = &entry->node;
+            var.readOnly = node->flags & CN_RO;
+            if (node->flags & CN_BOOL) {
+                var.type = EvaluableVarDescription::Bool;
+            } else if (node->flags & CN_STR) {
+                var.type = EvaluableVarDescription::String;
+            } else if (node->flags & CN_INT) {
+                var.type = EvaluableVarDescription::Int;
+            }
+
+            var.value = QString::fromUtf8(rz_config_entry_get_as_string(entry));
+
+            if (node->options) {
+                var.options = convertRzSetS(node->options);
+            }
+        }
+
+        evalVarsList->append(var);
+        return true;
+    };
+
+    QList<EvaluableVarDescription> evalVars;
+    CORE_LOCK();
+
+    CutterHtSP<RzConfig>(core->plugin_configs)
+            .ForEach([&evalVars, rzConfigIteratorCb](const char *, const RzConfig *config) {
+                if (config) {
+                    rz_config_iterate_over(config, rzConfigIteratorCb, &evalVars);
+                }
+                return true;
+            });
+
+    if (core->config) {
+        rz_config_iterate_over(core->config, rzConfigIteratorCb, &evalVars);
+    }
+
+    return evalVars;
+}
+
+QList<QString> CutterCore::getAllEvaluableVarSpaces()
+{
+    CORE_LOCK();
+    QList<QString> evalVarSpaces;
+
+    RzList *spaces = rz_core_config_in_space(core, nullptr);
+    RzListIter *iter;
+    char *space;
+    CutterRzListForeach (spaces, iter, char, space) {
+        evalVarSpaces << QString::fromUtf8(space);
+    }
+
+    rz_list_free(spaces);
+
+    return evalVarSpaces;
+}
+
 QList<TypeDescription> CutterCore::getAllTypes()
 {
     QList<TypeDescription> types;
@@ -4078,6 +4253,7 @@ QList<TypeDescription> CutterCore::getBaseType(RzBaseTypeKind kind, const char *
         exp.type = type->name;
         exp.size = rz_type_db_base_get_bitsize(typedb, type);
         exp.format = rz_base_type_as_format(typedb, type);
+        exp.typeClass = rz_type_typeclass_as_string(rz_base_type_typeclass(typedb, type));
         exp.category = tr(category);
         types << exp;
     }
@@ -4109,6 +4285,21 @@ QList<TypeDescription> CutterCore::getAllEnums()
 QList<TypeDescription> CutterCore::getAllTypedefs()
 {
     return getBaseType(RZ_BASE_TYPE_KIND_TYPEDEF, "Typedef");
+}
+
+QList<QString> CutterCore::getAllTypeClasses()
+{
+    QList<QString> typeClasses;
+
+    // Starting loop from "NONE" instead of "Num" on purpose because typeclass for a type can be set
+    // to "NONE" in types widget. If we started the loop from "Num" here, then there would be
+    // no option to set typeclass to "NONE" through the context menu inside types widget
+    for (RzTypeTypeclass tc = RZ_TYPE_TYPECLASS_NONE; tc < RZ_TYPE_TYPECLASS_INVALID;
+         tc = static_cast<RzTypeTypeclass>(tc + 1)) {
+        typeClasses << rz_type_typeclass_as_string(tc);
+    }
+
+    return typeClasses;
 }
 
 QString CutterCore::getTypeAsC(const QString &name)
@@ -5408,6 +5599,12 @@ QStringList CutterCore::getConfigVariableSpaces(const QString &key)
     return stringList;
 }
 
+void CutterCore::resetConfig()
+{
+    CORE_LOCK();
+    rz_core_config_init(core);
+}
+
 char *CutterCore::getTextualGraphAt(RzCoreGraphType type, RzCoreGraphFormat format, RVA address)
 {
     CORE_LOCK();
@@ -5476,4 +5673,34 @@ void CutterCore::writeGraphvizGraphToFile(const QString &path, const QString &fo
 void CutterCore::showTypeInTypesWidget(const QString &typeName)
 {
     emit showTypeRequested(typeName);
+}
+
+void CutterCore::renameType(const QString &from, const QString &to)
+{
+    CORE_LOCK();
+
+    rz_core_types_rename(core, from.toUtf8().constData(), to.toUtf8().constData());
+
+    emit functionsChanged();
+    emit globalVarsChanged();
+    emit varsChanged();
+}
+
+void CutterCore::setTypeClass(const QString &type, const QString &typeClass)
+{
+    CORE_LOCK();
+    const RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+    RzBaseType *btype = rz_type_db_get_base_type(typedb, type.toUtf8().constData());
+    if (!btype) {
+        return;
+    }
+
+    const QByteArray typeClassBytes = typeClass.toUtf8();
+    const char *typeClassChar = typeClassBytes.constData();
+    const RzTypeTypeclass typeclass = rz_type_typeclass_from_string(typeClassChar);
+
+    if (typeclass == RZ_TYPE_TYPECLASS_NONE && strcmp(typeClassChar, "None")) {
+        return;
+    }
+    rz_base_type_set_typeclass(btype, typeclass);
 }

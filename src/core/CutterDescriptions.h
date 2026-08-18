@@ -10,8 +10,9 @@
 #include <QColor>
 #include <QList>
 #include <QMetaType>
+#include <QSet>
 #include <QString>
-#include <QStringList>
+#include <QVariant>
 
 struct FunctionDescription
 {
@@ -79,6 +80,7 @@ struct TypeDescription
     int size;
     QString format;
     QString category;
+    QString typeClass;
 };
 
 struct SearchDescription
@@ -455,6 +457,19 @@ struct BacktraceDescription
     QString description;
 };
 
+struct EvaluableVarDescription
+{
+    QString name;
+    QString description;
+    bool readOnly;
+
+    enum Type : ut8 { Bool = 0, Int, String, Interval, Set };
+    Type type;
+
+    QVariant value; ///< Can be either QString, QSet<QString> or RzInterval depending on type
+    QSet<QString> options;
+};
+
 Q_DECLARE_METATYPE(FunctionDescription)
 Q_DECLARE_METATYPE(ImportDescription)
 Q_DECLARE_METATYPE(ExportDescription)
@@ -500,5 +515,6 @@ Q_DECLARE_METATYPE(BinDiffMatchDescription)
 Q_DECLARE_METATYPE(BinDiffStatusDescription)
 Q_DECLARE_METATYPE(MarkDescription)
 Q_DECLARE_METATYPE(BacktraceDescription)
+Q_DECLARE_METATYPE(EvaluableVarDescription)
 
 #endif // DESCRIPTIONS_H

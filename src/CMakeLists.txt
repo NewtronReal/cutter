@@ -53,6 +53,7 @@ set(SOURCES
     common/Configuration.cpp
     common/Colors.cpp
     common/TempConfig.cpp
+    common/PjHandle.cpp
     common/SvgIconEngine.cpp
     common/SyntaxHighlighter.cpp
     widgets/DecompilerWidget.cpp
@@ -177,6 +178,9 @@ set(SOURCES
     widgets/AbstractFilterView.cpp
     dialogs/preferences/InterfaceOptionsWidget.cpp
     common/Json.cpp
+    dialogs/preferences/RizinConfigOptionsWidget.cpp
+    dialogs/IntervalDialog.cpp
+    dialogs/StringListDialog.cpp
 )
 set(HEADER_FILES
     core/Cutter.h
@@ -230,6 +234,7 @@ set(HEADER_FILES
     common/Configuration.h
     common/Colors.h
     common/TempConfig.h
+    common/PjHandle.h
     common/SvgIconEngine.h
     common/SyntaxHighlighter.h
     widgets/DecompilerWidget.h
@@ -362,6 +367,9 @@ set(HEADER_FILES
     widgets/ItemCountLineEdit.h
     widgets/AbstractFilterView.h
     dialogs/preferences/InterfaceOptionsWidget.h
+    dialogs/preferences/RizinConfigOptionsWidget.h
+    dialogs/IntervalDialog.h
+    dialogs/StringListDialog.h
 )
 set(UI_FILES
     dialogs/AboutDialog.ui
@@ -449,6 +457,7 @@ set(UI_FILES
     widgets/SearchBarWidget.ui
     dialogs/preferences/SymbolsOptionsWidget.ui
     dialogs/preferences/InterfaceOptionsWidget.ui
+    dialogs/preferences/RizinConfigOptionsWidget.ui
 )
 set(QRC_FILES
     resources.qrc
@@ -630,7 +639,9 @@ if(CUTTER_ENABLE_PACKAGING)
     target_compile_definitions(Cutter PRIVATE CUTTER_ENABLE_PACKAGING)
 endif()
 
-include(Translations)
+if(CUTTER_ENABLE_TRANSLATIONS)
+    include(Translations)
+endif()
 
 # Install files
 install(TARGETS Cutter

@@ -786,7 +786,8 @@ RzProjectErr MainWindow::saveProjectAs(bool *canceled)
         *canceled = false;
     }
     auto rizin = core->lock();
-    const RzProjectErr err = rz_project_save_file(rizin, file.toUtf8().constData(), false);
+    const RzProjectErr err = rz_project_save_file(
+            rizin, file.toUtf8().constData(), rz_config_get_bool(rizin->config, "prj.compress"));
     if (err == RZ_PROJECT_ERR_SUCCESS) {
         Config()->addRecentProject(file);
     }
@@ -1161,6 +1162,8 @@ void MainWindow::showAddress(RVA addr)
         auto memoryWidget = getOrCreateMemoryWidget(targetType, addr, true);
         memoryWidget->tryRaiseMemoryWidget();
         setCurrentMemoryWidget(memoryWidget);
+    } else {
+        Core()->showMemoryWidget();
     }
 }
 
