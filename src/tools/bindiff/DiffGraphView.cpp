@@ -29,7 +29,7 @@ DiffGraphView::~DiffGraphView() {}
 void DiffGraphView::refreshView()
 {
     CutterGraphView::refreshView();
-    // loadCurrentGraph(diffGraphMode);
+    loadCurrentGraph(diffGraphMode);
     viewport()->update();
     emit viewRefreshed();
 }
@@ -37,9 +37,9 @@ void DiffGraphView::refreshView()
 ut64 DiffGraphView::graphEntryFromOffset(ut64 offset, bool original)
 {
     if (original) {
-        return blocksA.contains(offset) ? blocksA.at(offset) : RVA_INVALID;
+        return blocksA.find(offset) != blocksA.end() ? blocksA.at(offset) : RVA_INVALID;
     }
-    return blocksB.contains(offset) ? blocksB.at(offset) : RVA_INVALID;
+    return blocksB.find(offset) != blocksB.end() ? blocksB.at(offset) : RVA_INVALID;
 }
 
 void DiffGraphView::drawDiffLine(QPainter &p, const QString &instr, int x, int y,
@@ -84,7 +84,7 @@ void DiffGraphView::addDiffGraphBlockMatched(const CutterDiffItem &diffItem)
     }
     // convert offsets to entries: Revise there is change of inefficient use of indices which may
     // increase exponentially
-    ut64 entry = graphEntryFromOffset(diffItem.descriptionA()["offset"].toULongLong(), true);
+    const ut64 entry = graphEntryFromOffset(diffItem.descriptionA()["offset"].toULongLong(), true);
     const RVA bbiFailA = diffItem.descriptionA()["fail"].toULongLong();
     const RVA bbiJumpA = diffItem.descriptionA()["jump"].toULongLong();
     const RVA bbiFailB = diffItem.descriptionB()["fail"].toULongLong();
@@ -136,14 +136,14 @@ void DiffGraphView::addDiffGraphBlockMatched(const CutterDiffItem &diffItem)
     if (diffItem.descriptionA().contains("casejumps")) {
         for (const qulonglong jump :
              diffItem.descriptionA()["casejumps"].value<QList<qulonglong>>()) {
-            ut64 graphEntry = graphEntryFromOffset(jump, true);
+            const ut64 graphEntry = graphEntryFromOffset(jump, true);
             db.caseOps[graphEntry] = DiffItemRemoved;
         }
     }
     if (diffItem.descriptionB().contains("casejumps")) {
         for (const qulonglong jump :
              diffItem.descriptionB()["casejumps"].value<QList<qulonglong>>()) {
-            ut64 graphEntry = graphEntryFromOffset(jump, false);
+            const ut64 graphEntry = graphEntryFromOffset(jump, false);
             if (db.caseOps.contains(graphEntry)) {
                 db.caseOps[graphEntry] = DiffItemMatched;
             } else {
@@ -231,7 +231,7 @@ void DiffGraphView::addDiffGraphBlockMismatch(const CutterDiffItem &diffItem)
             instr.b = desc["disas"].toString();
         }
         instr.type = isOriginal ? DiffInstrDeleted : DiffInstrInserted;
-        db.instrs.emplace_back(instr);
+        db.instrs.append(instr);
     }
     diffBlocks[db.entry] = db;
     prepareGraphNode(gb);
@@ -566,7 +566,8 @@ void DiffGraphView::setTooltipStylesheet()
     setStyleSheet(DisassemblyPreview::getToolTipStyleSheet());
 }
 
-void DiffGraphView::blockClicked(GraphView::GraphBlock &block, QMouseEvent *event, QPoint pos)
+void DiffGraphView::blockClicked(GraphView::GraphBlock &block, QMouseEvent * /*event*/,
+                                 QPoint /*pos*/)
 {
     // Mostly instruction specific logic
     currentBlockEntry = block.entry;
@@ -666,10 +667,6 @@ void DiffGraphView::showExportDialog()
         qInfo() << "Export format not supported yet.";
         break;
     }
-}
-
-void DiffGraphView::blockDoubleClicked(GraphView::GraphBlock &block, QMouseEvent *event, QPoint pos)
-{
 }
 
 void DiffGraphView::paintEvent(QPaintEvent *event)
