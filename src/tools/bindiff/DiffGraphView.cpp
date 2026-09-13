@@ -1,5 +1,6 @@
 #include "DiffGraphView.h"
 
+#include <QRegularExpression>
 #include <QVBoxLayout>
 
 #include <DisassemblyPreview.h>
@@ -300,7 +301,7 @@ void DiffGraphView::prepareGraphNode(GraphBlock &block)
     double width = longestLine(db.headerText);
     double height = 1 + lineCount(db.headerText);
     auto trimRight = [](QString &str) {
-        while (!str.isEmpty() && str.back().isSpace()) {
+        while (!str.isEmpty() && str[str.size() - 1].isSpace()) {
             str.chop(1);
         }
     };

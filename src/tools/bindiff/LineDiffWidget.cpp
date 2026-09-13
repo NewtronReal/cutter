@@ -297,7 +297,11 @@ int DiffTextEdit::lineNumberAreaWidth() const
 {
     const int digits = QString::number(document()->blockCount()).length();
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     return 8 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
+#else
+    return 8 + fontMetrics().width(QLatin1Char('9')) * digits;
+#endif
 }
 
 void DiffTextEdit::updateLineNumberArea()
