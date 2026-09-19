@@ -12,6 +12,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QObject>
+#include <deque>
 
 class CutterDiffLocked;
 class CutterDiff;
@@ -175,17 +176,7 @@ public:
      * sets currentDiffItemIndex to -1 if out of currentDiffItemIndex is given
      * @param index
      */
-    void setCurrentDiffItemIndex(int index)
-    {
-        if (index > (int)diffItemList.size()) {
-            index = diffItemList.size() - 1;
-        }
-        if (index < 0) {
-            index = -1;
-        }
-        currentDiffItemIndex = index;
-        emit currentItemDiffChanged();
-    }
+    void setCurrentDiffItemIndex(int index, DiffSeekLocation location = {});
 
     int getCurrentDiffItemIndex() const { return currentDiffItemIndex; }
 
@@ -238,6 +229,15 @@ public:
 
     QList<DiffInstr> rzDiffOpToCutterInstrs(RzDiff *diff,
                                             RzList * /*<RzList<RzDiffOp*>>**/ list) const;
+    int diffItemIndexAtAddr(RVA addr, bool orig);
+    int itemClosestToAddr(DiffSeekLocation location);
+    DiffSeekLocation getCurrentSeekLocation();
+    void seekToDiffItemAt(int diffItemIndex);
+    void seekToAddr(RVA addr, bool orig);
+    void undoSeekHistory();
+    void redoSeekHistory();
+    bool seekUndoable() const;
+    bool seekRedoable() const;
 
 private:
     RzCore *coreA = nullptr;
@@ -261,6 +261,10 @@ private:
     int currentDiffItemIndex;
     std::vector<CutterDiffItem> diffItemList;
 
+    //Seek
+    std::deque<DiffSeekLocation> seekHistory;
+    int currentSeekHistoryIndex=0;
+
     // Function pairing
     RZ_OWN RzList *getFunctions(RzAnalysis *analysis, int compareLogic);
     RZ_OWN RzAnalysisMatchResult *
@@ -276,8 +280,9 @@ private:
     RZ_OWN RzList *lineDiffOpsGrouped(RzDiff *diff) const;
 signals:
     void currentMatchChanged();
-    void currentItemDiffChanged();
+    void currentDiffItemChanged();
     void diffDataUpdated();
+    void seekChanged();
     // void diffDataUpdated();//data update shall be added to every widget TODO
     // so we can do selective diffing of functions and chosse which all the blocks to be diffed
     // also there shall be a individual Diffing thread like BinDiff for performing diffing on

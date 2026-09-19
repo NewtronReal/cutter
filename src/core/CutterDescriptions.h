@@ -14,13 +14,24 @@
 #include <QString>
 #include <QVariant>
 
+struct DiffSeekLocation
+{
+    RVA addr =  RVA_INVALID;
+    bool orig = true;
+
+    bool operator==(const DiffSeekLocation &other) const
+    {
+        return addr == other.addr && orig == other.orig;
+    }
+};
+
 struct FunctionDescription
 {
-    RVA offset;
-    RVA linearSize;
-    RVA nargs;
-    RVA nbbs;
-    RVA nlocals;
+    RVA offset = RVA_INVALID;
+    RVA linearSize = 0;
+    RVA nargs = 0;
+    RVA nbbs = 0;
+    RVA nlocals = 0;
     QString calltype;
     QString name;
     RVA edges;

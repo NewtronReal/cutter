@@ -14,7 +14,7 @@ HexDiffWidget::HexDiffWidget(CutterDiff *cutterDiff, CutterDiffWindow *parent)
     ui->splitter->insertWidget(0, hexDiffView);
     ui->splitter->setSizes({ 750, 250 });
 
-    connect(cutterDiff, &CutterDiff::currentItemDiffChanged, this, &HexDiffWidget::seekToDiffItem);
+    connect(cutterDiff, &CutterDiff::seekChanged, this, &HexDiffWidget::seekToDiffItem);
 
     connect(ui->shiftUpA, &QPushButton::clicked, this, [this]() { hexDiffView->transpose(-1, 0); });
     connect(ui->shiftDownA, &QPushButton::clicked, this,

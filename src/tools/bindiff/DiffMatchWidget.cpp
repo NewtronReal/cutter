@@ -40,7 +40,7 @@ bool DiffMatchProxyModel::filterAcceptsRow(int sourceRow,
         }
     }
 
-    if (filterRegularExpression().pattern().isEmpty()) {
+    if (CUTTER_FILTER_REGEXP().pattern().isEmpty()) {
         return true;
     }
     for (int column = 0; column < DiffMatchModel::ColumnCount; ++column) {
@@ -49,7 +49,7 @@ bool DiffMatchProxyModel::filterAcceptsRow(int sourceRow,
 
         const QString text = index.data(Qt::DisplayRole).toString();
 
-        if (filterRegularExpression().match(text).hasMatch()) {
+        if (CUTTER_FILTER_REGEXP().match(text).hasMatch()) {
             return true;
         }
     }

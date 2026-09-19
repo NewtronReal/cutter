@@ -994,3 +994,223 @@ QList<DiffInstr> CutterDiff::rzDiffOpToCutterInstrs(RzDiff *diff,
     }
     return result;
 }
+
+
+int CutterDiff::diffItemIndexAtAddr(RVA addr, bool orig)
+{
+    for (int i = 0; i < diffItemList.size(); ++i) {
+        const CutterDiffItem &diffItem = diffItemList[i];
+
+        if (orig) {
+            if (diffItem.getType() != DiffItemAdded &&
+                diffItem.functionA().contains(addr)) {
+                return i;
+            }
+        } else {
+            if (diffItem.getType() != DiffItemRemoved &&
+                diffItem.functionB().contains(addr)) {
+                return i;
+            }
+        }
+    }
+
+    return -1;
+}
+
+int CutterDiff::itemClosestToAddr(DiffSeekLocation location)
+{
+    const int index = diffItemIndexAtAddr(location.addr, location.orig);
+
+    if (index != -1) {
+        return index;
+    }
+
+    int closestIndex = -1;
+    RVA closestDistance = std::numeric_limits<RVA>::max();
+
+    for (int i = 0; i < diffItemList.size(); ++i) {
+        const CutterDiffItem &diffItem = diffItemList[i];
+
+        if (location.orig) {
+            if (diffItem.getType() == DiffItemAdded) {
+                continue;
+            }
+
+            const auto &function = diffItem.functionA();
+            const RVA start = function.offset;
+            const RVA end = start + function.linearSize;
+
+            if (location.addr >= start && location.addr < end) {
+                return i;
+            }
+
+            RVA distance;
+
+            if (location.addr < start) {
+                distance = start - location.addr;
+            } else {
+                distance = location.addr - end;
+            }
+
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestIndex = i;
+            }
+        } else {
+            if (diffItem.getType() == DiffItemRemoved) {
+                continue;
+            }
+
+            const auto &function = diffItem.functionB();
+            const RVA start = function.offset;
+            const RVA end = start + function.linearSize;
+
+            if (location.addr >= start && location.addr < end) {
+                return i;
+            }
+
+            RVA distance;
+
+            if (location.addr < start) {
+                distance = start - location.addr;
+            } else {
+                distance = location.addr - end;
+            }
+
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestIndex = i;
+            }
+        }
+    }
+
+    return closestIndex;
+}
+
+DiffSeekLocation CutterDiff::getCurrentSeekLocation()
+{
+    if (seekHistory.empty() ||
+        currentSeekHistoryIndex < 0 ||
+        currentSeekHistoryIndex >= static_cast<int>(seekHistory.size())) {
+        return {};
+    }
+
+    return seekHistory[currentSeekHistoryIndex];
+}
+
+void CutterDiff::seekToAddr(RVA addr, bool orig)
+{
+    const DiffSeekLocation location { addr, orig };
+
+           // Don't create duplicate history entries.
+    if (!seekHistory.empty() &&
+        currentSeekHistoryIndex >= 0 &&
+        getCurrentSeekLocation() == location) {
+        return;
+    }
+
+           // Discard redo history.
+    seekHistory.erase(
+            seekHistory.begin() + currentSeekHistoryIndex + 1,
+            seekHistory.end()
+            );
+
+    seekHistory.push_back(location);
+    currentSeekHistoryIndex = seekHistory.size() - 1;
+
+           // The address may not belong to a diff item exactly.
+    currentDiffItemIndex = diffItemIndexAtAddr(addr, orig);
+
+    if (currentDiffItemIndex == -1) {
+        currentDiffItemIndex = itemClosestToAddr(location);
+    }
+
+    emit seekChanged();
+}
+
+void CutterDiff::setCurrentDiffItemIndex(int index, DiffSeekLocation location)
+{
+    if (index >= static_cast<int>(diffItemList.size())) {
+        index = static_cast<int>(diffItemList.size()) - 1;
+    }
+
+    if (index < 0) {
+        index = -1;
+    }
+
+    currentDiffItemIndex = index;
+
+    if (location.addr == RVA_INVALID) {
+        location.addr = getCurrentDiffItem().functionA().offset;
+        location.orig = true;
+    } else {
+        const DiffSeekLocation currentLocation = getCurrentSeekLocation();
+
+        if (currentLocation == location) {
+            return;
+        }
+    }
+
+           // Discard redo history.
+    seekHistory.erase(
+            seekHistory.begin() + currentSeekHistoryIndex + 1,
+            seekHistory.end()
+            );
+
+    seekHistory.push_back(location);
+
+           // IMPORTANT
+    currentSeekHistoryIndex = static_cast<int>(seekHistory.size()) - 1;
+
+    emit seekChanged();
+}
+
+void CutterDiff::undoSeekHistory()
+{
+    if (seekHistory.empty() || currentSeekHistoryIndex <= 0) {
+        return;
+    }
+
+    --currentSeekHistoryIndex;
+
+    const DiffSeekLocation location = getCurrentSeekLocation();
+
+    currentDiffItemIndex =
+            diffItemIndexAtAddr(location.addr, location.orig);
+
+    if (currentDiffItemIndex == -1) {
+        currentDiffItemIndex = itemClosestToAddr(location);
+    }
+
+    emit seekChanged();
+}
+
+void CutterDiff::redoSeekHistory()
+{
+    if (seekHistory.empty() ||
+        currentSeekHistoryIndex >= static_cast<int>(seekHistory.size()) - 1) {
+        return;
+    }
+
+    ++currentSeekHistoryIndex;
+
+    const DiffSeekLocation location = getCurrentSeekLocation();
+
+    currentDiffItemIndex =
+            diffItemIndexAtAddr(location.addr, location.orig);
+
+    if (currentDiffItemIndex == -1) {
+        currentDiffItemIndex = itemClosestToAddr(location);
+    }
+    emit seekChanged();
+}
+
+bool CutterDiff::seekUndoable() const
+{
+    return currentSeekHistoryIndex > 0;
+}
+
+bool CutterDiff::seekRedoable() const
+{
+    return currentSeekHistoryIndex < static_cast<int>(seekHistory.size()) - 1;
+}

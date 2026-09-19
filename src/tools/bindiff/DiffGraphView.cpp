@@ -15,7 +15,7 @@ DiffGraphView::DiffGraphView(CutterDiff *cutterDiff, QWidget *parent)
     actionCenter = new QAction("Center", this);
     installEventFilter(this);
     connect(Core(), &CutterCore::refreshAll, this, &DiffGraphView::refreshView);
-    connect(cutterDiff, &CutterDiff::currentItemDiffChanged, this, &DiffGraphView::refreshView);
+    connect(cutterDiff, &CutterDiff::seekChanged, this, &DiffGraphView::refreshView);
     connect(actionCenter, &QAction::triggered, this, [this]() {
         center();
         this->viewport()->update();

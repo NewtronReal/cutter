@@ -10,6 +10,12 @@
 #include <CutterDiff.h>
 #include <deque>
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#define CUTTER_FILTER_REGEXP() filterRegularExpression()
+#else
+#define CUTTER_FILTER_REGEXP() filterRegExp()
+#endif
+
 namespace Ui {
 class CutterDiffWindow;
 }
@@ -63,22 +69,6 @@ private:
     DiffMatchWidget *matchWidget = nullptr;
     DiffMisMatchWidget *addedWidget = nullptr;
     DiffMisMatchWidget *removedWidget = nullptr;
-    struct DiffSeekLocation
-    {
-        int tabIndex;
-        int diffItemIndex;
-
-        bool operator==(const DiffSeekLocation &other) const
-        {
-            return tabIndex == other.tabIndex && diffItemIndex == other.diffItemIndex;
-        }
-    };
-
-    std::deque<DiffSeekLocation> seekHistory;
-    size_t currentSeekIndex = 0;
-    bool seekingHistory = false;
-
-    static constexpr size_t maxSeekHistory = 50;
     ut8 lastMemoryWidget = HexDiff;
 
 protected:
@@ -90,10 +80,8 @@ private:
     void addGraphDiff();
     void setupFonts();
     void exportDiff();
-    void seekHistoryForward();
     void seekHistoryBackward();
-    void seekToCurrentHistory();
-    void addSeekHistory();
+    void seekHistoryForward();
 
     void updateSeekActions();
     void onTabIndexChanged();

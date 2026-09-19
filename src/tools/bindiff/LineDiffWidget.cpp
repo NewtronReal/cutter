@@ -84,7 +84,7 @@ LineDiffWidget::LineDiffWidget(CutterDiff *cutterDiff, CutterDiffWindow *parent)
     connect(Config(), &Configuration::fontsUpdated, this, &LineDiffWidget::setUpFonts);
     onViewModeChanged();
 
-    connect(cutterDiff, &CutterDiff::currentItemDiffChanged, this, &LineDiffWidget::reload);
+    connect(cutterDiff, &CutterDiff::seekChanged, this, &LineDiffWidget::reload);
 }
 
 LineDiffWidget::~LineDiffWidget() {}

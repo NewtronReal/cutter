@@ -45,11 +45,10 @@ CutterDiffWindow::CutterDiffWindow(std::unique_ptr<CutterDiff> cutterDiff, QWidg
     connect(ui->actionExportToJSON, &QAction::triggered, this, &CutterDiffWindow::exportDiff);
 
     connect(ui->tabWidget, &QTabWidget::currentChanged, this, &CutterDiffWindow::onTabIndexChanged);
-    connect(this->cutterDiff.get(), &CutterDiff::currentItemDiffChanged, this,
-            &CutterDiffWindow::addSeekHistory);
 
     connect(ui->actionUndoSeek, &QAction::triggered, this, &CutterDiffWindow::seekHistoryBackward);
     connect(ui->actionRedoSeek, &QAction::triggered, this, &CutterDiffWindow::seekHistoryForward);
+    connect(this->cutterDiff.get(), &CutterDiff::seekChanged, this, &CutterDiffWindow::updateSeekActions);
 
     // ui->tabParsing->hide();
 
@@ -80,7 +79,6 @@ void CutterDiffWindow::showPrevMemoryWidget()
 
 void CutterDiffWindow::onTabIndexChanged()
 {
-    addSeekHistory();
     if (!(ui->tabWidget->currentIndex() < HexDiff)) {
         lastMemoryWidget = ui->tabWidget->currentIndex();
     }
@@ -88,72 +86,13 @@ void CutterDiffWindow::onTabIndexChanged()
 
 void CutterDiffWindow::seekHistoryBackward()
 {
-    if (seekHistory.empty() || currentSeekIndex == 0) {
-        return;
-    }
-
-    --currentSeekIndex;
-    seekToCurrentHistory();
+    cutterDiff->undoSeekHistory();
     updateSeekActions();
 }
 
 void CutterDiffWindow::seekHistoryForward()
 {
-    if (seekHistory.empty() || currentSeekIndex + 1 >= seekHistory.size()) {
-        return;
-    }
-
-    ++currentSeekIndex;
-    seekToCurrentHistory();
-    updateSeekActions();
-}
-
-void CutterDiffWindow::seekToCurrentHistory()
-{
-    if (seekHistory.empty() || currentSeekIndex >= seekHistory.size()) {
-        return;
-    }
-
-    const auto &currentHistory = seekHistory[currentSeekIndex];
-
-    seekingHistory = true;
-
-    cutterDiff->setCurrentDiffItemIndex(currentHistory.diffItemIndex);
-
-    ui->tabWidget->setCurrentIndex(currentHistory.tabIndex);
-
-    seekingHistory = false;
-}
-
-void CutterDiffWindow::addSeekHistory()
-{
-    if (seekingHistory || !cutterDiff || ui->tabWidget->currentIndex() < HexDiff) {
-        return;
-    }
-
-    const DiffSeekLocation location { ui->tabWidget->currentIndex(),
-                                      cutterDiff->getCurrentDiffItemIndex() };
-
-    // Don't add duplicate consecutive locations.
-    if (!seekHistory.empty() && seekHistory.back() == location) {
-        return;
-    }
-
-    // Remove forward history.
-    if (!seekHistory.empty() && currentSeekIndex + 1 < seekHistory.size()) {
-
-        seekHistory.erase(seekHistory.begin() + currentSeekIndex + 1, seekHistory.end());
-    }
-
-    seekHistory.push_back(location);
-    currentSeekIndex = seekHistory.size() - 1;
-
-    // Limit history size.
-    if (seekHistory.size() > maxSeekHistory) {
-        seekHistory.pop_front();
-        --currentSeekIndex;
-    }
-
+    cutterDiff->redoSeekHistory();
     updateSeekActions();
 }
 
@@ -207,11 +146,6 @@ void CutterDiffWindow::setupFonts() {}
 
 void CutterDiffWindow::showDiff()
 {
-    seekHistory.clear();
-    currentSeekIndex = 0;
-
-    seekHistory.push_back({ HexDiff, cutterDiff->getCurrentDiffItemIndex() });
-
     emit reload();
 
     updateSeekActions();
@@ -219,10 +153,9 @@ void CutterDiffWindow::showDiff()
 
 void CutterDiffWindow::updateSeekActions()
 {
-    ui->actionUndoSeek->setEnabled(!seekHistory.empty() && currentSeekIndex > 0);
+    ui->actionUndoSeek->setEnabled(cutterDiff->seekUndoable());
 
-    ui->actionRedoSeek->setEnabled(!seekHistory.empty()
-                                   && currentSeekIndex + 1 < seekHistory.size());
+    ui->actionRedoSeek->setEnabled(cutterDiff->seekRedoable());
 }
 
 void CutterDiffWindow::onActionDiffNewFile()

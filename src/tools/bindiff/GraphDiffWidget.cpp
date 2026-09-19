@@ -46,7 +46,7 @@ GraphDiffWidget::GraphDiffWidget(CutterDiff *cutterDiff, CutterDiffWindow *paren
     bottomHBox->addWidget(comboBox);
 
     vBox->addLayout(bottomHBox, 0);
-    connect(cutterDiff, &CutterDiff::currentItemDiffChanged, this, &GraphDiffWidget::reload);
+    connect(cutterDiff, &CutterDiff::seekChanged, this, &GraphDiffWidget::reload);
     connect(comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &GraphDiffWidget::reload);
     connect(splitOrientationButton, &QPushButton::clicked, this, [this, splitter]() {
